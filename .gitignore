@@ -1,0 +1,43 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# C/C++ build artifacts
+build/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+
+# PlatformIO / embedded
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Arduino
+*.ino.cpp
+
+# Logs and data dumps
+*.log
+logs/
+
+# Secrets / local config
+.env
+*.local
+secrets.*
