@@ -3,7 +3,7 @@
 //
 // Proves every connection on the TVC flight-computer PCB works BEFORE
 // any flight logic is written: I2C bus + both sensors, SD read/write,
-// all four servos, and both status LEDs.
+// the servos, and both status LEDs.
 //   setup() runs the full diagnostic sequence once.
 //   loop()  streams live sensor readings so you can watch values change.
 //
@@ -216,27 +216,51 @@ void exerciseServo(Servo &s, const char *name, int pin, int center, int swing) {
 }
 
 // ---------------------------------------------------------------------
-// [5] Servo sweep test (visual) - confirm each servo is on the right pin
+// [5] Servo test (visual)
+//
+// BREADBOARD BRING-UP: only ONE servo is wired right now - Parachute
+// Servo 1 on D3. Goal is just to confirm the code runs, that the pin
+// actually outputs PWM, and that the power wiring is right. The other
+// three servos (Pitch D9, Yaw D6, Parachute 2 D5) are left commented out
+// below - uncomment them once the real board is assembled and all four
+// are connected.
+//
+// POWER: run servos from their OWN power rail, NOT the Arduino 5V pin
+// (a servo's stall current can brown-out the board). That rail's ground
+// MUST be tied to the Arduino ground, or the PWM signal has no shared
+// reference and the servo won't move.
 // ---------------------------------------------------------------------
 void testServos() {
   Serial.println();
-  Serial.println("[5] Servo sweep test (watch each servo move as it's named)");
+  Serial.println("[5] Servo test (breadboard: single servo on D3)");
+  Serial.println("    Power the servo from its own rail, NOT Arduino 5V (share grounds!).");
 
-  // TVC gimbal servos - full test swing around center.
-  exerciseServo(servoPitch, "Servo Pitch (TVC)", PIN_SERVO_PITCH,
-                SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
-  exerciseServo(servoYaw, "Servo Yaw (TVC)", PIN_SERVO_YAW,
-                SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
+  // The only servo wired right now: Parachute Servo 1 on D3.
+  // Wide, repeated sweep so the motion is obvious - this proves the servo
+  // itself, the D3 PWM output, and the power wiring are all working.
+  Serial.println("    Testing Parachute Servo 1 on D3 - watch it sweep back and forth...");
+  servoPara1.attach(PIN_SERVO_PARACHUTE1);
+  servoPara1.write(SERVO_CENTER_DEG);   // start centered
+  delay(500);
+  for (int i = 0; i < SERVO_BRINGUP_REPEATS; i++) {
+    Serial.print("      sweep "); Serial.print(i + 1);
+    Serial.print(" of "); Serial.println(SERVO_BRINGUP_REPEATS);
+    sweepTo(servoPara1, SERVO_CENTER_DEG, SERVO_CENTER_DEG + SERVO_BRINGUP_SWING_DEG); // up
+    sweepTo(servoPara1, SERVO_CENTER_DEG + SERVO_BRINGUP_SWING_DEG,
+            SERVO_CENTER_DEG - SERVO_BRINGUP_SWING_DEG);                               // full swing down
+    sweepTo(servoPara1, SERVO_CENTER_DEG - SERVO_BRINGUP_SWING_DEG, SERVO_CENTER_DEG); // back to center
+  }
+  servoPara1.write(SERVO_CENTER_DEG);   // leave centered
 
-  // Parachute servos - small swing only; the deploy mechanism may be attached.
-  Serial.println("    !! Parachute servos next - small test range only.");
-  Serial.println("    !! Keep clear in case the deployment mechanism is attached.");
-  exerciseServo(servoPara1, "Parachute Servo 1", PIN_SERVO_PARACHUTE1,
-                PARACHUTE_CLOSED_DEG, PARACHUTE_TEST_SWING_DEG);
-  exerciseServo(servoPara2, "Parachute Servo 2", PIN_SERVO_PARACHUTE2,
-                PARACHUTE_CLOSED_DEG, PARACHUTE_TEST_SWING_DEG);
+  // ---- Uncomment when the full board is assembled and all four are wired ----
+  // exerciseServo(servoPitch, "Servo Pitch (TVC)", PIN_SERVO_PITCH,
+  //               SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
+  // exerciseServo(servoYaw, "Servo Yaw (TVC)", PIN_SERVO_YAW,
+  //               SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
+  // exerciseServo(servoPara2, "Parachute Servo 2", PIN_SERVO_PARACHUTE2,
+  //               PARACHUTE_CLOSED_DEG, PARACHUTE_TEST_SWING_DEG);
 
-  Serial.println("    All servos returned to center/closed.");
+  Serial.println("    Servo returned to center/closed.");
 }
 
 // ---------------------------------------------------------------------
@@ -301,7 +325,8 @@ void setup() {
   Serial.print("MPU6050 (0x68) ....... "); Serial.println(g_mpuPass ? "PASS" : "FAIL");
   Serial.print("BME280  (0x77) ....... "); Serial.println(g_bmePass ? "PASS" : "FAIL");
   Serial.print("SD card (CS D10) ..... "); Serial.println(g_sdPass ? "PASS" : "FAIL");
-  Serial.println("Servos (D9/D6/D3/D5) . TESTED (visual)");
+  Serial.println("Servo D3 (Para1) ..... TESTED (visual)");
+  Serial.println("Servos D9/D6/D5 ...... SKIPPED (not wired)");
   Serial.println("LEDs (D2/D4) ......... TESTED (visual)");
   Serial.println("============================");
   Serial.println();
