@@ -1,66 +1,40 @@
 """
-Simulation.py
---------------
-Very basic wind input generator for our TVC model rocket (Dallas, TX).
+Wind input generator for our TVC model rocket (Dallas, TX).
 
-This makes the WIND the rocket sees over time. It does NOT model the
-rocket's response (no forces, no drag) -- that's the TVC model's job.
-Each sample carries three things:
+Generates the wind the rocket sees over time -- not the rocket's response.
+Each sample has: wind speed (mph), twist sign (+ CCW / - CW), and moment
+arm (m, + toward nose / - toward tail).
 
-  intensity   -> wind speed in mph (0 to 10, realistic for Dallas)
-  direction   -> which of 4 spots it hits: left/right x top/bottom,
-                 giving a twist sign (+ CCW / - CW)
-  moment arm  -> how far from the center of mass it lands (m),
-                 signed + toward the nose, - toward the tail
-
-Pick a MODE:
-  "step"     Hold wind at 0, then at t = STEP_TIME slam it to a constant
-             and hold it. The single most useful test -- feed it to the
-             model and watch the angle deflect, overshoot, and settle.
-  "discrete" A few hand-picked gusts at different magnitudes and moment
-             arms, to check the response scales sanely and that
-             saturation / anti-windup behave.
-  "random"   Randomized gusts and directions (a rough real-ish profile).
+MODE picks the test: "step" (clean step response), "discrete" (a few set
+gusts), "random" (real-ish profile), or "all" (compare all three).
 """
 
 import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ----------------------------------------------------------------------
-# Which test to run
-# ----------------------------------------------------------------------
 MODE = "all"             # "all" | "step" | "discrete" | "random"
 
-# ----------------------------------------------------------------------
 # Time + limits
-# ----------------------------------------------------------------------
-DURATION_S = 30.0        # length of the window we simulate (seconds)
-DT = 0.2                 # time step / array interval (seconds)
-MIN_WIND = 0.0           # hard floor on wind speed (mph)
-MAX_WIND = 10.0          # hard ceiling on wind speed (mph)
+DURATION_S = 30.0        # seconds
+DT = 0.05                # sample interval (seconds)
+MIN_WIND = 0.0           # mph
+MAX_WIND = 10.0          # mph
 
-# ----------------------------------------------------------------------
-# Rocket geometry -- only used to place the moment arm (a distance)
-# ----------------------------------------------------------------------
-ROCKET_LENGTH_M = 1.0                            # total length (m)
-CG_FROM_NOSE_M = 0.55                            # center of mass from nose (m)
-TOP_HALF_LEN = CG_FROM_NOSE_M                    # CoM -> nose
-BOTTOM_HALF_LEN = ROCKET_LENGTH_M - CG_FROM_NOSE_M  # CoM -> tail
+# Rocket geometry -- only used to place the moment arm
+ROCKET_LENGTH_M = 1.0
+CG_FROM_NOSE_M = 0.55
+TOP_HALF_LEN = CG_FROM_NOSE_M
+BOTTOM_HALF_LEN = ROCKET_LENGTH_M - CG_FROM_NOSE_M
 
-# ----------------------------------------------------------------------
-# STEP test settings
-# ----------------------------------------------------------------------
-STEP_TIME = 1.0          # when the wind turns on (seconds)
-STEP_LEVEL = 6.0         # constant wind held after the step (mph)
-STEP_SIDE = "left"       # left / right
-STEP_HALF = "top"        # top / bottom (above / below CoM)
-STEP_ARM_FRAC = 0.8      # where in that half it lands (0 = CoM, 1 = tip)
+# Step test
+STEP_TIME = 1.0          # wind turns on (s)
+STEP_LEVEL = 6.0         # held wind after the step (mph)
+STEP_SIDE = "left"
+STEP_HALF = "top"
+STEP_ARM_FRAC = 0.8      # 0 = CoM, 1 = tip
 
-# ----------------------------------------------------------------------
-# DISCRETE test gusts:  (start_s, dur_s, mag_mph, side, half, arm_frac, sharp)
-# Different magnitudes and moment arms so we can check scaling.
-# ----------------------------------------------------------------------
+# Discrete gusts: (start_s, dur_s, mag_mph, side, half, arm_frac, sharp)
 DISCRETE_GUSTS = [
     (2.0,  3.0, 3.0, "left",  "top",    0.5, False),
     (8.0,  3.0, 6.0, "right", "top",    0.8, True),
@@ -68,50 +42,60 @@ DISCRETE_GUSTS = [
     (20.0, 3.0, 6.0, "right", "bottom", 0.3, True),
 ]
 
-# ----------------------------------------------------------------------
-# RANDOM mode settings
-# ----------------------------------------------------------------------
+# Random mode (per-step values, tuned for DT = 0.05 s)
 BASELINE_MEAN = 4.0
-BASELINE_WANDER = 0.30
+BASELINE_WANDER = 0.15
+BASELINE_PULL = 0.0125
 GUST_MIN_DURATION = 2.0
 GUST_MAX_DURATION = 5.0
 GUST_MIN_PEAK = 2.0
 GUST_MAX_PEAK = 7.0
-GUST_CHANCE = 0.06
+GUST_CHANCE = 0.015      # per step (~0.3 per second)
 GUST_SHARP_CHANCE = 0.40
 
+# Unit conversions
+IN_TO_M = 0.0254
+MPH_TO_MS = 0.44704
 
-# ----------------------------------------------------------------------
-# Shared helpers
-# ----------------------------------------------------------------------
+
 def gust_envelope(n_steps, sharp=False):
     """Rise-and-fall shape for one gust, values in [0, 1]."""
     if n_steps < 2:
         return np.ones(max(n_steps, 1))
     if not sharp:
-        return np.hanning(n_steps)          # smooth, symmetric swell
-    rise_steps = max(1, int(n_steps * random.uniform(0.05, 0.15)))
-    fall_steps = n_steps - rise_steps
-    rise = np.sin(np.linspace(0, np.pi / 2, rise_steps))   # fast up
-    fall = np.cos(np.linspace(0, np.pi / 2, fall_steps))   # slow down
-    return np.concatenate([rise, fall])
+        return np.hanning(n_steps)
+    rise = max(1, int(n_steps * random.uniform(0.05, 0.15)))
+    up = np.sin(np.linspace(0, np.pi / 2, rise))
+    down = np.cos(np.linspace(0, np.pi / 2, n_steps - rise))
+    return np.concatenate([up, down])
 
 
 def direction_sign(side, half):
-    """Twist sign: +1 CCW, -1 CW. (left+top / right+bottom are CW.)"""
+    """Twist sign: +1 CCW, -1 CW."""
     return -1 if (side, half) in (("left", "top"), ("right", "bottom")) else +1
 
 
 def moment_arm(half, frac):
     """Signed distance from the CoM (m): + toward nose, - toward tail."""
-    if half == "top":
-        return +frac * TOP_HALF_LEN
-    return -frac * BOTTOM_HALF_LEN
+    return frac * TOP_HALF_LEN if half == "top" else -frac * BOTTOM_HALF_LEN
 
 
-# ----------------------------------------------------------------------
-# The three input builders -- each returns (time, wind, sign, arm, log)
-# ----------------------------------------------------------------------
+def broadside_drag_force(wind_mph, length_in, diameter_in,
+                         cd=1.1, air_density=1.225):
+    """Broadside drag force in newtons: F = 0.5 * rho * v^2 * Cd * A."""
+    v = wind_mph * MPH_TO_MS
+    area = (length_in * IN_TO_M) * (diameter_in * IN_TO_M)
+    return 0.5 * air_density * v ** 2 * cd * area
+
+
+def wind_moment(wind_mph, length_in, diameter_in, arm_m,
+                cd=1.1, air_density=1.225):
+    """Moment about the CoM in newton-metres: drag force times lever arm."""
+    force = broadside_drag_force(wind_mph, length_in, diameter_in, cd, air_density)
+    return force * arm_m
+
+
+# Each builder returns (time, wind, sign, arm, log).
 def build_step():
     """Zero, then a constant step held for the rest of the run."""
     time = np.arange(0.0, DURATION_S, DT)
@@ -134,19 +118,17 @@ def build_discrete():
     for start, dur, mag, side, half, frac, sharp in DISCRETE_GUSTS:
         i0 = int(start / DT)
         i1 = min(i0 + int(dur / DT), n)
-        steps = i1 - i0
-        if steps <= 0:
+        if i1 <= i0:
             continue
-        wind[i0:i1] += gust_envelope(steps, sharp) * mag
+        wind[i0:i1] += gust_envelope(i1 - i0, sharp) * mag
         sign[i0:i1] = direction_sign(side, half)
         arm[i0:i1] = moment_arm(half, frac)
         log.append((start, dur, mag, side, half, frac, sharp))
-    wind = np.clip(wind, MIN_WIND, MAX_WIND)
-    return time, wind, sign, arm, log
+    return time, np.clip(wind, MIN_WIND, MAX_WIND), sign, arm, log
 
 
 def build_random():
-    """Randomized gusts and directions -- a rough real-ish profile."""
+    """Wandering baseline plus randomized gusts."""
     time = np.arange(0.0, DURATION_S, DT)
     n = len(time)
 
@@ -154,13 +136,13 @@ def build_random():
     baseline[0] = BASELINE_MEAN
     for i in range(1, n):
         step = random.uniform(-BASELINE_WANDER, BASELINE_WANDER)
-        pull = (BASELINE_MEAN - baseline[i - 1]) * 0.05
+        pull = (BASELINE_MEAN - baseline[i - 1]) * BASELINE_PULL
         baseline[i] = baseline[i - 1] + step + pull
 
-    b_side = random.choice(("left", "right"))
-    b_half = random.choice(("top", "bottom"))
-    sign = np.full(n, direction_sign(b_side, b_half))
-    arm = np.full(n, moment_arm(b_half, random.uniform(0.3, 1.0)))
+    sign = np.full(n, direction_sign(random.choice(("left", "right")),
+                                     random.choice(("top", "bottom"))))
+    arm = np.full(n, moment_arm(random.choice(("top", "bottom")),
+                                random.uniform(0.3, 1.0)))
 
     gusts = np.zeros(n)
     log = []
@@ -171,15 +153,14 @@ def build_random():
             steps = min(int(dur / DT), n - i)
             peak = random.uniform(GUST_MIN_PEAK, GUST_MAX_PEAK)
             sharp = random.random() < GUST_SHARP_CHANCE
+            side = random.choice(("left", "right"))
+            half = random.choice(("top", "bottom"))
+            frac = random.uniform(0.3, 1.0)
+
             gusts[i:i + steps] += gust_envelope(steps, sharp) * peak
-
-            g_side = random.choice(("left", "right"))
-            g_half = random.choice(("top", "bottom"))
-            g_frac = random.uniform(0.3, 1.0)
-            sign[i:i + steps] = direction_sign(g_side, g_half)
-            arm[i:i + steps] = moment_arm(g_half, g_frac)
-
-            log.append((time[i], steps * DT, peak, g_side, g_half, g_frac, sharp))
+            sign[i:i + steps] = direction_sign(side, half)
+            arm[i:i + steps] = moment_arm(half, frac)
+            log.append((time[i], steps * DT, peak, side, half, frac, sharp))
             i += steps
         else:
             i += 1
@@ -188,25 +169,13 @@ def build_random():
     return time, wind, sign, arm, log
 
 
-# Name -> builder, and a friendly label for plot titles.
 BUILDERS = {
     "step":     (build_step,     "Constant (step)"),
     "discrete": (build_discrete, "A few discrete gusts"),
-    "random":   (build_random,   "Randomized (original)"),
+    "random":   (build_random,   "Randomized"),
 }
 
 
-def simulate_wind():
-    if MODE == "step":
-        return build_step()
-    if MODE == "discrete":
-        return build_discrete()
-    return build_random()
-
-
-# ----------------------------------------------------------------------
-# Plot
-# ----------------------------------------------------------------------
 def plot_results(time, wind, signed_wind):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
 
@@ -238,13 +207,12 @@ def plot_results(time, wind, signed_wind):
 
 
 def plot_all():
-    """All three profiles stacked in one figure for comparison."""
+    """All three profiles stacked in one figure."""
     fig, axes = plt.subplots(len(BUILDERS), 1, figsize=(11, 9), sharex=True)
 
     for ax, (name, (builder, label)) in zip(axes, BUILDERS.items()):
         time, wind, sign, arm, log = builder()
         signed = wind * sign
-
         ax.plot(time, signed, color="black", linewidth=1.0)
         ax.axhline(0, color="gray", linewidth=1)
         ax.fill_between(time, signed, 0, where=(signed >= 0),
@@ -256,11 +224,9 @@ def plot_all():
         ax.set_ylim(-(MAX_WIND + 1), MAX_WIND + 1)
         ax.grid(True, alpha=0.3)
 
-    # one shared legend for the whole figure
     green = plt.Rectangle((0, 0), 1, 1, color="tab:green", alpha=0.4)
     red = plt.Rectangle((0, 0), 1, 1, color="tab:red", alpha=0.4)
     axes[0].legend([green, red], ["CCW (+)", "CW (-)"], loc="upper right")
-
     axes[-1].set_xlabel("Time (s)")
     fig.suptitle("Wind Simulation -- all three profiles (Dallas, TX)")
     plt.tight_layout()
@@ -274,21 +240,20 @@ def print_summary(name, wind, log):
     for start, dur, mag, side, half, frac, sharp in log:
         kind = "sharp" if sharp else "smooth"
         spin = "CCW" if direction_sign(side, half) > 0 else "CW"
-        a = moment_arm(half, frac)
         print(f"  t={start:5.1f}s  {dur:4.1f}s  {mag:4.1f} mph  {kind:6s}  "
-              f"{side:5s}+{half:6s} -> {spin:3s}  arm {a:+.2f} m")
+              f"{side:5s}+{half:6s} -> {spin:3s}  arm {moment_arm(half, frac):+.2f} m")
 
 
 if __name__ == "__main__":
-    print(f"MODE = {MODE}  ({len(np.arange(0, DURATION_S, DT))} samples, "
-          f"step = {DT} s)")
+    print(f"MODE = {MODE}  ({int(DURATION_S / DT)} samples, step = {DT} s)")
 
     if MODE == "all":
-        for name, (builder, _label) in BUILDERS.items():
-            _t, wind, _s, _a, log = builder()
+        for name, (builder, _) in BUILDERS.items():
+            _, wind, _, _, log = builder()
             print_summary(name, wind, log)
         plot_all()
     else:
-        time, wind, sign, arm, log = simulate_wind()
+        builder, _ = BUILDERS[MODE]
+        time, wind, sign, arm, log = builder()
         print_summary(MODE, wind, log)
         plot_results(time, wind, wind * sign)
