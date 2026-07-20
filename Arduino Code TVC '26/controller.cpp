@@ -9,7 +9,7 @@ pitchPID(pitchPIDObj),
 yawPID(yawPIDObj),
 flightState(flightState),
 logger(loggerObj),
-leds(led)
+leds(ledObj)
 {
     prevTime = 0;
 }
