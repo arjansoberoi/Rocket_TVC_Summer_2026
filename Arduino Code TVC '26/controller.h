@@ -4,11 +4,11 @@
 #include <Arduino.h>
 
 //ties together the implementation files, needs access
-#include "Sensors.h"
+#include "sensors.h"
 #include "servo_control.h"
 #include "PID.h"
 #include "flight_state.h"
-#include "Logger.h"
+#include "logger.h"
 #include "led.h"
 #include "config.h"
 

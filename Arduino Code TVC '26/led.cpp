@@ -3,8 +3,8 @@
 
 //constructor
 LEDs::LEDs(int imuLEDPin, int sdLEDPin) {
-    this->imuLEDPin = IMU_LED_PIN;    //intialize pins from config
-    this->sdLEDPin = DATA_LED_PIN;
+    this->imuLEDPin = imuLEDPin;
+    this->sdLEDPin = sdLEDPin;
 }
 
 void LEDs::beginLEDs() {

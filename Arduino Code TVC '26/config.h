@@ -35,9 +35,14 @@
 #define PITCH_KI 0.2
 #define PITCH_KD 0.1
 
+//TODO(team): tune independently, mirrored from pitch as a starting point
+#define YAW_KP 0.5
+#define YAW_KI 0.2
+#define YAW_KD 0.1
+
 //flight state machine constants (subject to change)
 #define LAUNCH_ACCEL_THRESH 24.5    //2.5g
 #define MOTOR_BURN_TIME 3500.0 //milliseconds (3.5 seconds)
-#define TOTAL_FLIGHT_TIME
+#define TOTAL_FLIGHT_TIME 7000.0 //milliseconds (7 seconds), TODO(team): confirm against real flight profile
 
 #endif 

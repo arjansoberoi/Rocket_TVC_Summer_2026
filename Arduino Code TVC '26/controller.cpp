@@ -5,30 +5,30 @@ Controller::Controller(Sensors &sensorObj, ServoControl &servoObj, PID &pitchPID
 :
 sensors(sensorObj),
 servos(servoObj),
-pitchPID(pitchPIDObj), 
+pitchPID(pitchPIDObj),
 yawPID(yawPIDObj),
-flightState(flightState),
+flightState(stateObj),
 logger(loggerObj),
-leds(ledObj)
+led(ledObj)
 {
     prevTime = 0;
 }
 
 void Controller::beginController() {
     //start leds first
-    leds.beginLEDs();
+    led.beginLEDs();
 
     //start sensors
     sensors.begin();
 
     //check imu
-    leds.indicateIMU(sensors.getIMUStatus());
+    led.indicateIMU(sensors.getIMUStatus());
 
     //start sd card writer
     logger.initializeLogger();
 
     //check sd card writer
-    leds.indicateSD(logger.getSDStatus());
+    led.indicateSD(logger.getSDStatus());
 
     //calibrate sensors
     sensors.calibrate();
@@ -59,6 +59,15 @@ void Controller::updateController() {
 
     FlightPhase phase = flightState.getState();
 
+    //parachute deploys: checked every cycle (not gated on phase) since the
+    //deploy flags can become true on a cycle where phase has already moved past APOGEE
+    if(flightState.shouldDeploy1()) {
+        servos.deployPar1();
+    }
+    if(flightState.shouldDeploy2()) {
+        servos.deployPar2();
+    }
+
     //TVC Control:
    switch(phase) {
     case POWERED:
@@ -70,17 +79,8 @@ void Controller::updateController() {
         servos.setYaw(yawCommand);
         break;
     }
-    case APOGEE:
-    {
-        if(flightState.shouldDeploy1()) {
-            servos.deploy1();
-        }
-        if(flightState.shouldDeploy2()) {
-            servos.deploy2();
-        }
-        break;
-   }
     case GROUND:
+    case APOGEE:
     case DESCENT:
     case LANDED:
     default:

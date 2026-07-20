@@ -4,11 +4,12 @@
 Logger::Logger() {
     sdOK = false;
     filename = "flight.csv";
+    writeCount = 0;
 }
 
 void Logger::writeCSVHeader() {
-    //header
-    file.println("Time, AccelX, AccelY, AccelZ, OrientiationX, OrientationY, OrientationZ, Alitutde, Pressure, IMUTemp, BMETemp, Humidity");
+    //header, order must match writeData()
+    file.println("AccelX, AccelY, AccelZ, GyroX, GyroY, GyroZ, IMUTemp, Altitude, Pressure, BMETemp, Humidity, Time");
     file.flush();
 }
 
@@ -57,7 +58,15 @@ void Logger::writeData(const SensorData &currentData) {
     file.print(", ");
     file.print(currentData.humidity);
     file.print(", ");
-    file.print(currentData.timestamp);
+    file.println(currentData.timestamp);   //terminates the row
+
+    //flush periodically so data survives a sudden power loss instead of
+    //sitting in the SD buffer until closeFile() (which may never be called)
+    writeCount++;
+    if(writeCount >= 10) {
+        file.flush();
+        writeCount = 0;
+    }
 }
 
 void Logger::closeFile() {

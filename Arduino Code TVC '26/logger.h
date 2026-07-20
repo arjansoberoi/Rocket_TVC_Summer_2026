@@ -9,8 +9,9 @@
 class Logger {
 private:
     File file;      //file placeholder
-    String filename;    
-    bool sdOK; 
+    String filename;
+    bool sdOK;
+    int writeCount;   //tracks writes since last flush
 
     void writeCSVHeader();  //private helper function
 public:
