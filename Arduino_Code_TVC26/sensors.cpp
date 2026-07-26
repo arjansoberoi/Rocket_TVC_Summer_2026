@@ -71,9 +71,9 @@ void Sensors::calibrate() {
     float altitudeSum = 0;
 
     //sensor readings placeholders
-    sensor_event_t accel;
-    sensor_event_t gyro;
-    sensor_event_t temp;
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t temp;
 
     for(int i = 0; i < readings; i++) {
         //read mpu
@@ -111,9 +111,9 @@ void Sensors::calibrate() {
 
 SensorData Sensors::read() {
     //read mpu
-    sensor_event_t accel;
-    sensor_event_t gyro;
-    sensor_event_t temp;
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t temp;
     mpu.getEvent(&accel, &gyro, &temp);
 
     //store mpu readings in currentData struct

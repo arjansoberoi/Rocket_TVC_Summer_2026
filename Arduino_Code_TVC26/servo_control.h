@@ -2,6 +2,7 @@
 #define SERVO_CONTROL_H
 #include <Servo.h>
 #include <Arduino.h>
+#include "config.h"
 
 struct ServoConfig {
     int pitchCenterAngle;

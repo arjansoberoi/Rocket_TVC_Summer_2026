@@ -10,7 +10,9 @@
 //create sensors object
 Sensors sensors;
 
-//intialize pins
+FlightState flightstate;
+
+//constructors
 ServoControl servos(PITCH_SERVO_PIN, YAW_SERVO_PIN, PAR1_SERVO_PIN, PAR2_SERVO_PIN);
 
 PID pitchPID(PITCH_KP, PITCH_KI, PITCH_KD, -8, 8);
@@ -19,14 +21,16 @@ PID yawPID(YAW_KP, YAW_KI, YAW_KD, -8, 8);
 
 Logger logger;
 
+//another constructor
 LEDs leds(IMU_LED_PIN, DATA_LED_PIN);
 
-//main controller object
-Controller controller(sensors, servos, pitchPID, yawPID, flightState, logger, leds);
+//main controller object constructor
+Controller controller(sensors, servos, pitchPID, yawPID, flightstate, logger, leds);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); //115200 baud
 
+  //only on setup
   controller.beginController();
 }
 
