@@ -47,11 +47,6 @@
 #define PARACHUTE_TEST_SWING_DEG  15   // small, safe swing for parachute servos
 #define SERVO_STEP_DELAY_MS       15   // delay per degree so motion is visible
 
-// Single-servo breadboard bring-up: a wide, repeated sweep so it's obvious the
-// servo is actually moving. (The full-board test above uses the gentler swings.)
-#define SERVO_BRINGUP_SWING_DEG   45   // +/- from center; wide = obvious motion
-#define SERVO_BRINGUP_REPEATS      3   // number of back-and-forth sweeps
-
 // ---- Misc test config ----
 #define LED_TEST_BLINKS      3     // times each LED flashes during the LED test
 #define LOOP_STREAM_DELAY_MS 500   // how often loop() prints live readings (ms)
