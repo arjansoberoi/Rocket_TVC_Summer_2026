@@ -294,18 +294,20 @@ void setup() {
 
   // LED test first, before the LEDs take on their "status light" meaning.
   testLeds();
-  g_i2cPass = testI2C();
-  g_mpuPass = testMPU();   // sets IMU LED
-  g_bmePass = testBME();
+
+  // Sensors are temporarily out for replacement (fried on the breadboard) -
+  // disabled here, not deleted. Uncomment once the new MPU6050/BME280 arrive.
+  // g_i2cPass = testI2C();
+  // g_mpuPass = testMPU();   // sets IMU LED
+  // g_bmePass = testBME();
+
   g_sdPass  = testSD();    // sets SD LED
   testServos();
 
   // Summary block.
   Serial.println();
   Serial.println("===== BRING-UP SUMMARY =====");
-  Serial.print("I2C bus .............. "); Serial.println(g_i2cPass ? "PASS" : "FAIL");
-  Serial.print("MPU6050 (0x68) ....... "); Serial.println(g_mpuPass ? "PASS" : "FAIL");
-  Serial.print("BME280  (0x77) ....... "); Serial.println(g_bmePass ? "PASS" : "FAIL");
+  Serial.println("I2C/MPU6050/BME280 ... SKIPPED (sensors out for replacement)");
   Serial.print("SD card (CS D10) ..... "); Serial.println(g_sdPass ? "PASS" : "FAIL");
   Serial.println("Servo D9 (Pitch) ..... TESTED (visual)");
   Serial.println("Servo D6 (Yaw) ....... TESTED (visual)");
