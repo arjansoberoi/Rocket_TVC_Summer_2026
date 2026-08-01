@@ -195,35 +195,32 @@ bool testSD() {
   return false;
 }
 
-// Move a servo smoothly between two angles so the motion is easy to see.
-void sweepTo(Servo &s, int fromDeg, int toDeg) {
-  int step = (toDeg >= fromDeg) ? 1 : -1;
-  for (int a = fromDeg; a != toDeg; a += step) {
-    s.write(a);
-    delay(SERVO_STEP_DELAY_MS);
-  }
-  s.write(toDeg);
+// Write all four servos at once to a position along their own swing range:
+// pos -1 = full negative swing, 0 = center, +1 = full positive swing.
+void writeAllServosAt(float pos) {
+  servoPitch.write(SERVO_CENTER_DEG     + pos * SERVO_TEST_SWING_DEG);
+  servoYaw.write(SERVO_CENTER_DEG       + pos * SERVO_TEST_SWING_DEG);
+  servoPara1.write(PARACHUTE_CLOSED_DEG + pos * PARACHUTE_TEST_SWING_DEG);
+  servoPara2.write(PARACHUTE_CLOSED_DEG + pos * PARACHUTE_TEST_SWING_DEG);
 }
 
-// Exercise one servo: center -> +swing -> center -> -swing -> center.
-void exerciseServo(Servo &s, const char *name, int pin, int center, int swing) {
-  Serial.print("    Testing "); Serial.print(name);
-  Serial.print(" on D"); Serial.print(pin); Serial.println(" ...");
-  s.attach(pin);
-  s.write(center);                       delay(400);
-  sweepTo(s, center, center + swing);    delay(200);
-  sweepTo(s, center + swing, center);    delay(200);
-  sweepTo(s, center, center - swing);    delay(200);
-  sweepTo(s, center - swing, center);    delay(400);
+// Move all four servos together from one normalized position to another, in
+// lockstep, so they visibly turn at the same time instead of one at a time.
+void sweepAllServosTo(float fromPos, float toPos) {
+  int steps = SERVO_TEST_SWING_DEG;   // 1-degree resolution for the widest swing
+  for (int i = 1; i <= steps; i++) {
+    writeAllServosAt(fromPos + (toPos - fromPos) * ((float)i / steps));
+    delay(SERVO_STEP_DELAY_MS);
+  }
 }
 
 // ---------------------------------------------------------------------
 // [5] Servo test (visual)
 //
 // All four servos are now wired: Pitch (D9), Yaw (D6), Parachute 1 (D3),
-// Parachute 2 (D5). Each is exercised the same way via exerciseServo() -
-// center -> +swing -> center -> -swing -> center - to confirm the code
-// runs, the pin actually outputs PWM, and the power wiring is right.
+// Parachute 2 (D5). They move simultaneously - center -> +swing -> center
+// -> -swing -> center - to confirm the code runs, the pins actually output
+// PWM, and the power wiring is right.
 //
 // POWER: run servos from their OWN power rail, NOT the Arduino 5V pin
 // (a servo's stall current can brown-out the board). That rail's ground
@@ -232,17 +229,20 @@ void exerciseServo(Servo &s, const char *name, int pin, int center, int swing) {
 // ---------------------------------------------------------------------
 void testServos() {
   Serial.println();
-  Serial.println("[5] Servo test (all four servos)");
+  Serial.println("[5] Servo test (all four servos, simultaneous)");
   Serial.println("    Power the servos from their own rail, NOT Arduino 5V (share grounds!).");
+  Serial.println("    Testing Pitch (D9), Yaw (D6), Para1 (D3), Para2 (D5) together...");
 
-  exerciseServo(servoPitch, "Servo Pitch (TVC)", PIN_SERVO_PITCH,
-                SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
-  exerciseServo(servoYaw, "Servo Yaw (TVC)", PIN_SERVO_YAW,
-                SERVO_CENTER_DEG, SERVO_TEST_SWING_DEG);
-  exerciseServo(servoPara1, "Parachute Servo 1", PIN_SERVO_PARACHUTE1,
-                PARACHUTE_CLOSED_DEG, PARACHUTE_TEST_SWING_DEG);
-  exerciseServo(servoPara2, "Parachute Servo 2", PIN_SERVO_PARACHUTE2,
-                PARACHUTE_CLOSED_DEG, PARACHUTE_TEST_SWING_DEG);
+  servoPitch.attach(PIN_SERVO_PITCH);
+  servoYaw.attach(PIN_SERVO_YAW);
+  servoPara1.attach(PIN_SERVO_PARACHUTE1);
+  servoPara2.attach(PIN_SERVO_PARACHUTE2);
+
+  writeAllServosAt(0);      delay(400);   // start centered
+  sweepAllServosTo(0, 1);   delay(200);   // all swing positive together
+  sweepAllServosTo(1, 0);   delay(200);   // back to center together
+  sweepAllServosTo(0, -1);  delay(200);   // all swing negative together
+  sweepAllServosTo(-1, 0);  delay(400);   // back to center together
 
   Serial.println("    Servos returned to center/closed.");
 }
