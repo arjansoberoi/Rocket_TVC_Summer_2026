@@ -35,7 +35,7 @@
 
 // ---- SD card (SPI) ----
 #define PIN_SD_CS   10             // MOSI/MISO/SCK are the fixed HW SPI pins
-#define SD_TEST_FILE "bringup.txt" // file used for the write/read-back test
+#define SD_TEST_FILE "bringup.csv" // file used for the write/read-back test (.csv opens in Excel)
 
 // ---- Sensor config ----
 #define SEA_LEVEL_HPA 1013.25f   // reference for the BME280 altitude calc

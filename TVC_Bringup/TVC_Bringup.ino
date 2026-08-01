@@ -166,6 +166,7 @@ bool testSD() {
     return false;
   }
   w.println(testLine);
+  w.println("Hello World");
   w.close();
 
   File r = SD.open(SD_TEST_FILE);
@@ -180,6 +181,7 @@ bool testSD() {
   r.close();
 
   Serial.print("    wrote:     "); Serial.println(testLine);
+  Serial.println("    also wrote: Hello World");
   Serial.print("    read back: "); Serial.println(readBack);
 
   if (readBack == testLine) {
@@ -292,35 +294,35 @@ void setup() {
   Wire.begin();
   Wire.setClock(I2C_CLOCK_DEFAULT);
 
-  // LED test first, before the LEDs take on their "status light" meaning.
-  testLeds();
-  g_i2cPass = testI2C();
-  g_mpuPass = testMPU();   // sets IMU LED
-  g_bmePass = testBME();
-  g_sdPass  = testSD();    // sets SD LED
-  testServos();
+  // Isolating servo testing for now - other subsystems disabled here,
+  // not deleted. Uncomment to bring them back.
+  // testLeds();
+  // g_i2cPass = testI2C();
+  // g_mpuPass = testMPU();   // sets IMU LED
+  // g_bmePass = testBME();
+  // g_sdPass  = testSD();    // sets SD LED
+  // Servo test now runs repeatedly from loop() (see below), not once here -
+  // that way a servo plugged in after power-up still gets swept, instead of
+  // missing a one-shot window that already ran during setup().
 
   // Summary block.
   Serial.println();
   Serial.println("===== BRING-UP SUMMARY =====");
-  Serial.print("I2C bus .............. "); Serial.println(g_i2cPass ? "PASS" : "FAIL");
-  Serial.print("MPU6050 (0x68) ....... "); Serial.println(g_mpuPass ? "PASS" : "FAIL");
-  Serial.print("BME280  (0x77) ....... "); Serial.println(g_bmePass ? "PASS" : "FAIL");
-  Serial.print("SD card (CS D10) ..... "); Serial.println(g_sdPass ? "PASS" : "FAIL");
-  Serial.println("Servo D9 (Pitch) ..... TESTED (visual)");
-  Serial.println("Servo D6 (Yaw) ....... TESTED (visual)");
-  Serial.println("Servo D3 (Para1) ..... TESTED (visual)");
-  Serial.println("Servo D5 (Para2) ..... TESTED (visual)");
-  Serial.println("LEDs (D2/D4) ......... TESTED (visual)");
+  Serial.println("LEDs/I2C/MPU6050/BME280/SD ... SKIPPED (isolating servo test)");
+  Serial.println("Servos (D9/D6/D3/D5) ... REPEATING in loop() - plug in any time");
   Serial.println("============================");
   Serial.println();
   Serial.println("Live readings follow - tilt/move the board to watch them change.");
 }
 
 // =====================================================================
-// loop() - continuously stream live sensor readings
+// loop() - repeat the servo sweep and stream live sensor readings
 // =====================================================================
 void loop() {
+  // Repeats forever so a servo plugged in mid-run still gets exercised on
+  // the next pass, instead of only sweeping once during setup().
+  testServos();
+
   Serial.println();
   Serial.println("---- live readings ----");
 
