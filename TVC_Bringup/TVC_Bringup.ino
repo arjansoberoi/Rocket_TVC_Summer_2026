@@ -3,9 +3,10 @@
 //
 // Proves every connection on the TVC flight-computer PCB works BEFORE
 // any flight logic is written: I2C bus + both sensors, SD read/write,
-// the servos, and both status LEDs.
+// the servos, and both status LEDs - all running together.
 //   setup() runs the full diagnostic sequence once.
-//   loop()  streams live sensor readings so you can watch values change.
+//   loop()  repeats the servo sweep, streams live sensor readings, and
+//           appends each reading as a CSV row on the SD card.
 //
 // Install via Arduino Library Manager (Tools > Manage Libraries):
 //   - Adafruit MPU6050
@@ -294,29 +295,54 @@ void setup() {
   Wire.begin();
   Wire.setClock(I2C_CLOCK_DEFAULT);
 
-  // Isolating servo testing for now - other subsystems disabled here,
-  // not deleted. Uncomment to bring them back.
-  // testLeds();
-  // g_i2cPass = testI2C();
-  // g_mpuPass = testMPU();   // sets IMU LED
-  // g_bmePass = testBME();
-  // g_sdPass  = testSD();    // sets SD LED
-  // Servo test now runs repeatedly from loop() (see below), not once here -
-  // that way a servo plugged in after power-up still gets swept, instead of
+  // Full suite - all subsystems active together.
+  testLeds();
+  g_i2cPass = testI2C();
+  g_mpuPass = testMPU();   // sets IMU LED
+  g_bmePass = testBME();
+  g_sdPass  = testSD();    // sets SD LED
+  // Servo test runs repeatedly from loop() (see below), not once here - that
+  // way a servo plugged in after power-up still gets swept, instead of
   // missing a one-shot window that already ran during setup().
+
+  // Start the sensor log fresh each power-up with a header row.
+  if (g_sdPass) {
+    SD.remove(SENSOR_LOG_FILE);
+    File log = SD.open(SENSOR_LOG_FILE, FILE_WRITE);
+    if (log) {
+      log.println("millis_ms,accelX_mps2,accelY_mps2,accelZ_mps2,"
+                   "gyroX_radps,gyroY_radps,gyroZ_radps,"
+                   "tempC,pressureHPa,altitudeM,humidityPct");
+      log.close();
+    }
+  }
 
   // Summary block.
   Serial.println();
   Serial.println("===== BRING-UP SUMMARY =====");
-  Serial.println("LEDs/I2C/MPU6050/BME280/SD ... SKIPPED (isolating servo test)");
-  Serial.println("Servos (D9/D6/D3/D5) ... REPEATING in loop() - plug in any time");
+  Serial.print("I2C bus .............. "); Serial.println(g_i2cPass ? "PASS" : "FAIL");
+  Serial.print("MPU6050 (0x68) ....... "); Serial.println(g_mpuPass ? "PASS" : "FAIL");
+  Serial.print("BME280  (0x77) ....... "); Serial.println(g_bmePass ? "PASS" : "FAIL");
+  Serial.print("SD card (CS D10) ..... "); Serial.println(g_sdPass ? "PASS" : "FAIL");
+  Serial.println("Servos (D9/D6/D3/D5) . REPEATING in loop() (simultaneous)");
+  Serial.println("LEDs (D2/D4) ......... TESTED (visual)");
   Serial.println("============================");
   Serial.println();
   Serial.println("Live readings follow - tilt/move the board to watch them change.");
 }
 
+// Append one CSV row of the current sensor readings to SENSOR_LOG_FILE.
+void logSensorRow(const String &row) {
+  if (!g_sdPass) return;
+  File log = SD.open(SENSOR_LOG_FILE, FILE_WRITE);
+  if (!log) return;
+  log.println(row);
+  log.close();
+}
+
 // =====================================================================
-// loop() - repeat the servo sweep and stream live sensor readings
+// loop() - repeat the servo sweep, stream live sensor readings, and log
+//          each reading to the SD card
 // =====================================================================
 void loop() {
   // Repeats forever so a servo plugged in mid-run still gets exercised on
@@ -325,6 +351,8 @@ void loop() {
 
   Serial.println();
   Serial.println("---- live readings ----");
+
+  String logRow = String(millis());
 
   if (g_mpuPass) {
     sensors_event_t a, g, temp;
@@ -335,18 +363,29 @@ void loop() {
     Serial.print("  Gyro  [rad/s]  X: "); Serial.print(g.gyro.x, 2);
     Serial.print("  Y: "); Serial.print(g.gyro.y, 2);
     Serial.print("  Z: "); Serial.println(g.gyro.z, 2);
+    logRow += "," + String(a.acceleration.x, 2) + "," + String(a.acceleration.y, 2) + "," + String(a.acceleration.z, 2);
+    logRow += "," + String(g.gyro.x, 2) + "," + String(g.gyro.y, 2) + "," + String(g.gyro.z, 2);
   } else {
     Serial.println("  MPU6050: not available (init failed)");
+    logRow += ",NA,NA,NA,NA,NA,NA";
   }
 
   if (g_bmePass) {
-    Serial.print("  Temp: ");     Serial.print(bme.readTemperature(), 2);          Serial.print(" C");
-    Serial.print("   Press: ");   Serial.print(bme.readPressure() / 100.0f, 2);    Serial.print(" hPa");
-    Serial.print("   Alt: ");     Serial.print(bme.readAltitude(SEA_LEVEL_HPA), 2);Serial.print(" m");
-    Serial.print("   Humidity: ");Serial.print(bme.readHumidity(), 1);             Serial.println(" %");
+    float t   = bme.readTemperature();
+    float p   = bme.readPressure() / 100.0f;
+    float alt = bme.readAltitude(SEA_LEVEL_HPA);
+    float h   = bme.readHumidity();
+    Serial.print("  Temp: ");     Serial.print(t, 2);   Serial.print(" C");
+    Serial.print("   Press: ");   Serial.print(p, 2);   Serial.print(" hPa");
+    Serial.print("   Alt: ");     Serial.print(alt, 2); Serial.print(" m");
+    Serial.print("   Humidity: ");Serial.print(h, 1);   Serial.println(" %");
+    logRow += "," + String(t, 2) + "," + String(p, 2) + "," + String(alt, 2) + "," + String(h, 1);
   } else {
     Serial.println("  BME280: not available (init failed)");
+    logRow += ",NA,NA,NA,NA";
   }
+
+  logSensorRow(logRow);
 
   updateStatusLeds();   // keep faulted subsystems' LEDs blinking as a reminder
   delay(LOOP_STREAM_DELAY_MS);
