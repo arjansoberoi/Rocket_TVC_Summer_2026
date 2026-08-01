@@ -84,14 +84,9 @@ bool testI2C() {
   Serial.println(bmeFound ? "    BME280  @ 0x77 ....... FOUND"
                           : "    BME280  @ 0x77 ....... NOT FOUND (check SDA/SCL/power/SDO)");
 
-  // Try the faster 400 kHz clock; keep it only if both devices still answer.
-  Wire.setClock(I2C_CLOCK_FAST);
-  if (i2cPresent(MPU6050_ADDR) && i2cPresent(BME280_ADDR)) {
-    Serial.println("    I2C @ 400 kHz ......... OK");
-  } else {
-    Wire.setClock(I2C_CLOCK_DEFAULT);
-    Serial.println("    I2C @ 400 kHz ......... FAILED, staying at 100 kHz");
-  }
+  // Staying at the safe 100kHz default for bring-up - the rocket doesn't
+  // need 400kHz here, and this removes one more possible I2C hang point.
+  // (The flight firmware, a separate sketch, is unaffected by this.)
 
   return mpuFound && bmeFound;
 }
@@ -297,7 +292,9 @@ void setup() {
   // A stalled I2C transaction (flaky sensor connection, bus left in a bad
   // state, etc.) can otherwise block forever - abort it after 25ms and
   // reset the bus so loop() (and the servo sweep) never freezes.
-  Wire.setWireTimeout(25000, true);
+  // Requires Arduino AVR core 1.8.10+ (Boards Manager > Arduino AVR Boards
+  // > Update) - commented out because it fails to compile on older cores.
+  // Wire.setWireTimeout(25000, true);
   Wire.setClock(I2C_CLOCK_DEFAULT);
 
   // Full suite - all subsystems active together.
@@ -369,6 +366,7 @@ void loop() {
   String logRow = String(millis());
 
   if (g_mpuPass) {
+    Serial.println("  [reading MPU...]");   // hang-diagnosis marker
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
     Serial.print("  Accel [m/s^2]  X: "); Serial.print(a.acceleration.x, 2);
@@ -385,6 +383,7 @@ void loop() {
   }
 
   if (g_bmePass) {
+    Serial.println("  [reading BME...]");   // hang-diagnosis marker
     float t   = bme.readTemperature();
     float p   = bme.readPressure() / 100.0f;
     float alt = bme.readAltitude(SEA_LEVEL_HPA);
@@ -399,6 +398,7 @@ void loop() {
     logRow += ",NA,NA,NA,NA";
   }
 
+  Serial.println("  [writing SD log...]");   // hang-diagnosis marker
   logSensorRow(logRow);
 
   updateStatusLeds();   // keep faulted subsystems' LEDs blinking as a reminder
