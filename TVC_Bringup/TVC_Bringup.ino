@@ -293,6 +293,10 @@ void setup() {
 
   // Bring up I2C at the safe default speed first.
   Wire.begin();
+  // A stalled I2C transaction (flaky sensor connection, bus left in a bad
+  // state, etc.) can otherwise block forever - abort it after 25ms and
+  // reset the bus so loop() (and the servo sweep) never freezes.
+  Wire.setWireTimeout(25000, true);
   Wire.setClock(I2C_CLOCK_DEFAULT);
 
   // Full suite - all subsystems active together.
