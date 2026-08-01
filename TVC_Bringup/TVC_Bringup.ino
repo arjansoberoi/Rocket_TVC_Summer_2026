@@ -37,6 +37,7 @@ bool g_i2cPass = false;
 bool g_mpuPass = false;
 bool g_bmePass = false;
 bool g_sdPass  = false;
+bool g_logPass = false;   // true once senslog.csv is created with its header row
 
 // ---------------------------------------------------------------------
 // Helpers
@@ -310,7 +311,11 @@ void setup() {
   // missing a one-shot window that already ran during setup().
 
   // Start the sensor log fresh each power-up with a header row.
-  if (g_sdPass) {
+  Serial.println();
+  Serial.println("[4b] Sensor log file init");
+  if (!g_sdPass) {
+    Serial.println("    SKIPPED - SD card test above already failed.");
+  } else {
     SD.remove(SENSOR_LOG_FILE);
     File log = SD.open(SENSOR_LOG_FILE, FILE_WRITE);
     if (log) {
@@ -318,6 +323,10 @@ void setup() {
                    "gyroX_radps,gyroY_radps,gyroZ_radps,"
                    "tempC,pressureHPa,altitudeM,humidityPct");
       log.close();
+      g_logPass = true;
+      Serial.print("    PASS - "); Serial.print(SENSOR_LOG_FILE); Serial.println(" created with header row.");
+    } else {
+      Serial.print("    FAIL - could not open "); Serial.print(SENSOR_LOG_FILE); Serial.println(" for writing.");
     }
   }
 
@@ -328,6 +337,7 @@ void setup() {
   Serial.print("MPU6050 (0x68) ....... "); Serial.println(g_mpuPass ? "PASS" : "FAIL");
   Serial.print("BME280  (0x77) ....... "); Serial.println(g_bmePass ? "PASS" : "FAIL");
   Serial.print("SD card (CS D10) ..... "); Serial.println(g_sdPass ? "PASS" : "FAIL");
+  Serial.print("Sensor log file ...... "); Serial.println(g_logPass ? "PASS" : "FAIL");
   Serial.println("Servos (D9/D6/D3/D5) . REPEATING in loop() (simultaneous)");
   Serial.println("LEDs (D2/D4) ......... TESTED (visual)");
   Serial.println("============================");
@@ -337,7 +347,7 @@ void setup() {
 
 // Append one CSV row of the current sensor readings to SENSOR_LOG_FILE.
 void logSensorRow(const String &row) {
-  if (!g_sdPass) return;
+  if (!g_logPass) return;   // skip if the log file itself never got created
   File log = SD.open(SENSOR_LOG_FILE, FILE_WRITE);
   if (!log) return;
   log.println(row);
