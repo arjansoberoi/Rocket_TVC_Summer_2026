@@ -6,9 +6,11 @@
 // Change a pin / address / test angle here, never in the .ino.
 // =====================================================================
 
-// TODO(team): confirm the exact board model (e.g. Nano Every vs Uno).
-// It affects ADC resolution + memory, but NOT the pins below. Assumed
-// here: Uno-style pinout (I2C on A4/A5, hardware SPI on 11/12/13).
+// Confirmed board: Arduino Nano Every (megaAVR/ATmega4809, not classic
+// AVR). Pin numbering below still matches Uno-style (I2C on A4/A5,
+// hardware SPI on 11/12/13) - Nano Every keeps this pinout for
+// shield/wiring compatibility. Board package in Boards Manager is
+// "Arduino megaAVR Boards", not "Arduino AVR Boards".
 
 // ---- Serial ----
 #define SERIAL_BAUD 115200

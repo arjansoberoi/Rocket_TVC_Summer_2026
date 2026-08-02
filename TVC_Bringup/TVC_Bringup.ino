@@ -292,8 +292,9 @@ void setup() {
   // A stalled I2C transaction (flaky sensor connection, bus left in a bad
   // state, etc.) can otherwise block forever - abort it after 25ms and
   // reset the bus so loop() (and the servo sweep) never freezes.
-  // Requires Arduino AVR core 1.8.10+ (Boards Manager > Arduino AVR Boards
-  // > Update) - commented out because it fails to compile on older cores.
+  // Board here is a Nano Every (megaAVR, not classic AVR) - requires
+  // updating "Arduino megaAVR Boards" via Boards Manager to a version
+  // that supports it. Commented out because it fails to compile as-is.
   // Wire.setWireTimeout(25000, true);
   Wire.setClock(I2C_CLOCK_DEFAULT);
 
