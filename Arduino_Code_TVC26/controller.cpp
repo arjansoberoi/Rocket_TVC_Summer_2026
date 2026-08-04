@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "config.h"
 
 //constructor, intialize class member variables
 Controller::Controller(Sensors &sensorObj, ServoControl &servoObj, PID &pitchPIDObj, PID &yawPIDObj, FlightState &stateObj, Logger &loggerObj, LEDs &ledObj)
@@ -74,8 +75,8 @@ void Controller::updateController() {
     case COAST:
     {
         //new targets need to be the pitch and yaw servo centers?
-        float pitchCommand = pitchPID.calculate(0, currentData.gyroY, dt);
-        float yawCommand = yawPID.calculate(0, currentData.gyroZ, dt);
+        float pitchCommand = pitchPID.calculate(PITCH_CENTER, currentData.gyroY, dt);
+        float yawCommand = yawPID.calculate(YAW_CENTER, currentData.gyroZ, dt);
         servos.setPitch(pitchCommand);
         servos.setYaw(yawCommand);
         break;
