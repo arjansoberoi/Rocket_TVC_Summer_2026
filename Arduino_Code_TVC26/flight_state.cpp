@@ -93,12 +93,12 @@ bool FlightState::detectApogee(const SensorData &data) {
     if(data.altitude < prevAltitude) {
         descendingCount++;  //increment everytime we detect descent
         if(descendingCount > APOGEE_CONFIRM_COUNT) {
+            prevAltitude = data.altitude;
             return true;
-        } else {
-            descendingCount = 0;    //reset if we stop descending
         }
+    } else {
+        descendingCount = 0;    //reset only when we stop descending
     }
-    //if not descending, keep updating prevAltitude
     prevAltitude = data.altitude;
     return false;
 }
