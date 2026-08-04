@@ -73,6 +73,7 @@ void Controller::updateController() {
     case POWERED:
     case COAST:
     {
+        //new targets need to be the pitch and yaw servo centers?
         float pitchCommand = pitchPID.calculate(0, currentData.gyroY, dt);
         float yawCommand = yawPID.calculate(0, currentData.gyroZ, dt);
         servos.setPitch(pitchCommand);

@@ -89,10 +89,17 @@ bool FlightState::detectCoast(const SensorData &data) {
 }
 
 bool FlightState::detectApogee(const SensorData &data) {
-    //this is susceptible to noise, might need to rework
-    if(data.altitude < prevAltitude - 0.5f) {
-        return true;
+    //requires 3 consecutive loops where we are descending
+    if(data.altitude < prevAltitude) {
+        descendingCount++;  //increment everytime we detect descent
+        if(descendingCount > APOGEE_CONFIRM_COUNT) {
+            return true;
+        } else {
+            descendingCount = 0;    //reset if we stop descending
+        }
     }
+    //if not descending, keep updating prevAltitude
+    prevAltitude = data.altitude;
     return false;
 }
 
