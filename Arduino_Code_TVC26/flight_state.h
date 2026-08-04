@@ -12,9 +12,7 @@ enum FlightPhase {
 class FlightState {
 private:
     FlightPhase currentPhase;   //enum declaration
-    
      //for apogee detection
-    float prevAltitude = 0.0f;
     uint8_t descendingCount = 0;
     //number of simultaneous cycles descending required to deploy parachutes
     static constexpr uint8_t APOGEE_CONFIRM_COUNT = 3;
