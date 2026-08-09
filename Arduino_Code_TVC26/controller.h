@@ -30,16 +30,6 @@ private:
     SensorData currentData;
 
     unsigned long prevTime;
-
-    //servo linkage ratio
-    const float PITCH_RATIO = 4.3333;
-    //asymmetric yaw servo 
-    const float YAW_POS_RATIO = 5.0;
-    const float YAW_NEG_RATIO = 8.5;    //placeholder
-
-    //yaw asymmetric correction
-    float calculateYawCommand(float yawCommand);
-    
 public:
 //constructor
 Controller(Sensors &sensorObj, ServoControl &servoObj, PID &pitchPIDObj, PID &yawPIDObj, FlightState &stateObj, Logger &loggerObj, LEDs &ledObj);
