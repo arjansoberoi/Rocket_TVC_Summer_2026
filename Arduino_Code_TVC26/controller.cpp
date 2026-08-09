@@ -85,7 +85,7 @@ void Controller::updateController() {
         //target represents ang velocity, so target = 0
         float pitchCommand = pitchPID.calculate(0.0, currentData.gyroY, dt);
         float yawCommand = yawPID.calculate(0.0, currentData.gyroZ, dt);
-        servos.setPitch(pitchCommand * PITCH_RATIO);
+        servos.setPitch(pitchCommand * PTICH_RATIO);
         servos.setYaw(calculateYawCommand(yawCommand));
         break;
     }
