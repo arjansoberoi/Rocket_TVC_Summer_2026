@@ -30,6 +30,9 @@ private:
     SensorData currentData;
 
     unsigned long prevTime;
+
+    const float SERVO_RATIO = 4.0;
+
 public:
 //constructor
 Controller(Sensors &sensorObj, ServoControl &servoObj, PID &pitchPIDObj, PID &yawPIDObj, FlightState &stateObj, Logger &loggerObj, LEDs &ledObj);

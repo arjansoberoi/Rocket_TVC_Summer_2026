@@ -70,15 +70,15 @@ void Controller::updateController() {
     }
 
     //TVC Control:
-   switch(phase) {
+    switch(phase) {
     case POWERED:
     case COAST:
     {
-        //new targets need to be the pitch and yaw servo centers?
-        float pitchCommand = pitchPID.calculate(PITCH_CENTER, currentData.gyroY, dt);
-        float yawCommand = yawPID.calculate(YAW_CENTER, currentData.gyroZ, dt);
-        servos.setPitch(pitchCommand);
-        servos.setYaw(yawCommand);
+        //targets are 0 ang velocity
+        float pitchCommand = pitchPID.calculate(0.0, currentData.gyroY, dt);
+        float yawCommand = yawPID.calculate(0.0, currentData.gyroZ, dt);
+        servos.setPitch(pitchCommand * SERVO_RATIO);
+        servos.setYaw(yawCommand * SERVO_RATIO);
         break;
     }
     case GROUND:

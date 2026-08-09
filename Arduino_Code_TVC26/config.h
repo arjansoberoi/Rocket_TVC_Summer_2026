@@ -8,12 +8,12 @@ constexpr int PAR1_SERVO_PIN = 3;
 constexpr int PAR2_SERVO_PIN = 5;
 
 //servo max, min, center, open, and closed angles (subject to change)
-constexpr int PITCH_CENTER = 82;
-constexpr int PITCH_MIN = 74;   //figure out
-constexpr int PITCH_MAX = 90;   //figure out
-constexpr int YAW_CENTER = 88;
-constexpr int YAW_MIN = 80;     //figure out
-constexpr int YAW_MAX = 91;     //figure out
+constexpr int PITCH_CENTER = 80;
+constexpr int PITCH_MIN = 60;   //figure out
+constexpr int PITCH_MAX = 100;   //figure out
+constexpr int YAW_CENTER = 115;
+constexpr int YAW_MIN = 135;     //figure out
+constexpr int YAW_MAX = 95;     //figure out
 constexpr int PAR1_CLOSED = 90;
 constexpr int PAR1_OPEN = 135;
 constexpr int PAR2_CLOSED = 90;
@@ -41,8 +41,8 @@ constexpr float YAW_KI = 0.2;
 constexpr float YAW_KD = 0.1;
 
 //flight state machine constants (subject to change)
-constexpr float LAUNCH_ACCEL_THRESH = 24.5;    //2.5g
+constexpr float LAUNCH_ACCEL_THRESH = 14.71;    //1.5g
 constexpr float MOTOR_BURN_TIME = 3450.0; //milliseconds (3.5 seconds)
-constexpr float TOTAL_FLIGHT_TIME = 15000.0; //milliseconds (15 seconds), TODO(team): confirm against real flight profile
+constexpr float TOTAL_FLIGHT_TIME = 10000.0; //milliseconds (15 seconds), TODO(team): confirm against real flight profile
 
 #endif 
