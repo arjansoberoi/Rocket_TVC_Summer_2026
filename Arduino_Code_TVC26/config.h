@@ -31,14 +31,14 @@ constexpr int PID_FREQ = 100;
 constexpr float DT = 0.01;
 
 //PID constants (subject to change)
-constexpr float PITCH_KP = 0.5;
-constexpr float PITCH_KI = 0.2;
-constexpr float PITCH_KD = 0.1;
+constexpr float PITCH_KP = 5.85;
+constexpr float PITCH_KI = 2.87;
+constexpr float PITCH_KD = 3.97;
 
 //TODO(team): tune independently, mirrored from pitch as a starting point
-constexpr float YAW_KP = 0.5;
-constexpr float YAW_KI = 0.2;
-constexpr float YAW_KD = 0.1;
+constexpr float YAW_KP = 5.85;
+constexpr float YAW_KI = 2.87;
+constexpr float YAW_KD = 3.97;
 
 //flight state machine constants (subject to change)
 constexpr float LAUNCH_ACCEL_THRESH = 14.71;    //1.5g
