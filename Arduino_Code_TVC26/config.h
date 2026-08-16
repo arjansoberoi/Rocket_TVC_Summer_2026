@@ -14,10 +14,10 @@ constexpr int PITCH_MAX = 100;   //figure out
 constexpr int YAW_CENTER = 115;
 constexpr int YAW_MIN = 135;     //figure out
 constexpr int YAW_MAX = 95;     //figure out
-constexpr int PAR1_CLOSED = 90;
-constexpr int PAR1_OPEN = 135;
-constexpr int PAR2_CLOSED = 90;
-constexpr int PAR2_OPEN = 135;
+constexpr int PAR1_CLOSED = 175;
+constexpr int PAR1_OPEN = 90;
+constexpr int PAR2_CLOSED = 5;
+constexpr int PAR2_OPEN = 80;
 
 //SD card chip select pin
 constexpr int SD_CS_PIN = 10;        
