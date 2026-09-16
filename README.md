@@ -10,7 +10,7 @@ We also wrote a flight state machine, which tracks the rocket through ground, po
 
 Sensor readings saved in CSV format and opened in Excel.
 
-[Nosecone opening and closing](https://www.youtube.com/shorts/kx9xmp64Nqc)
+[Nosecone opening and closing](docs/videos/nosecone.mov)
 
 [Gimbal moving](https://www.youtube.com/shorts/YIEfNCFN3Xc)
 
