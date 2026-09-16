@@ -8,4 +8,6 @@ We also wrote a flight state machine, which tracks the rocket through ground, po
 
 [Nosecone opening and closing](https://www.youtube.com/shorts/kx9xmp64Nqc)
 
+[Gimbal moving](https://www.youtube.com/shorts/YIEfNCFN3Xc)
+
 The [flight software](Arduino_Code_TVC26) captures our work on connecting sensor readings, control calculations, and hardware commands in one system. The launch remains postponed following the module failure, and the control settings and flight detection logic still need further testing before we can evaluate their performance in flight.
