@@ -6,4 +6,6 @@ The sensor code reads acceleration and rotation from an MPU6050 and uses a BME28
 
 We also wrote a flight state machine, which tracks the rocket through ground, powered flight, coast, apogee, descent, and landing. It uses acceleration, elapsed time, and changes in altitude to decide when to move between phases, and it includes commands for two parachute deployment servos at apogee, the highest point of flight. The logging code records timestamped sensor readings to an SD card in CSV format, giving us a way to review what the sensors recorded during testing.
 
+[Nosecone opening and closing](https://www.youtube.com/shorts/kx9xmp64Nqc)
+
 The [flight software](Arduino_Code_TVC26) captures our work on connecting sensor readings, control calculations, and hardware commands in one system. The launch remains postponed following the module failure, and the control settings and flight detection logic still need further testing before we can evaluate their performance in flight.
