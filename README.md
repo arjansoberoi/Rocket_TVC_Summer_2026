@@ -6,6 +6,10 @@ The sensor code reads acceleration and rotation from an MPU6050 and uses a BME28
 
 We also wrote a flight state machine, which tracks the rocket through ground, powered flight, coast, apogee, descent, and landing. It uses acceleration, elapsed time, and changes in altitude to decide when to move between phases, and it includes commands for two parachute deployment servos at apogee, the highest point of flight. The logging code records timestamped sensor readings to an SD card in CSV format, giving us a way to review what the sensors recorded during testing.
 
+![Sensor readings opened in Excel](docs/images/sensor-readings-excel.jpg)
+
+Sensor readings saved in CSV format and opened in Excel.
+
 [Nosecone opening and closing](https://www.youtube.com/shorts/kx9xmp64Nqc)
 
 [Gimbal moving](https://www.youtube.com/shorts/YIEfNCFN3Xc)
